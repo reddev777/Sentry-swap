@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import styles from './page.module.css';
 
 function Page() {
-
   useEffect(() => {
     // Dynamically load the Jupiter script
     const script = document.createElement('script');
@@ -14,11 +13,13 @@ function Page() {
   }, []);
 
   function launchJupiter() {
+    const apiKey = process.env.REACT_APP_HELIUS_API_KEY; // Get the API key from environment variable
+
     if (window.Jupiter) {
       window.Jupiter.init({ 
         displayMode: "integrated",
         integratedTargetId: "integrated-terminal",
-        endpoint: "https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY_HERE",
+        endpoint: `https://mainnet.helius-rpc.com/?api-key=${apiKey}`,
         strictTokenList: false,
         defaultExplorer: "SolanaFM",
         formProps: {
@@ -31,11 +32,10 @@ function Page() {
       console.error("Jupiter script not loaded yet");
     }
   }
+
   return (
     <div className={styles.body}>
-
       <div id="integrated-terminal"></div>
-
     </div>
   );
 }

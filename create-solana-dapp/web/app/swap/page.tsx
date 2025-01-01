@@ -5,13 +5,15 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { VersionedTransaction, Connection } from '@solana/web3.js';
 import React, { useState, useEffect, useCallback } from 'react';
 
+// Supported Assets
 const assets = [
-  { name: 'SOL', mint: 'So11111111111111111111111111111111111111112', decimals: 9},
-  { name: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6},
+  { name: 'SOL', mint: 'So11111111111111111111111111111111111111112', decimals: 9 },
+  { name: 'USDC', mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
   { name: 'BONK', mint: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', decimals: 5 },
-  { name: 'WIF', mint: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', decimals: 6},
+  { name: 'WIF', mint: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm', decimals: 6 },
 ];
 
+// Debounce utility function
 const debounce = <T extends unknown[]>(
   func: (...args: T) => void,
   wait: number
@@ -37,32 +39,22 @@ export default function Swap() {
   const [quoteResponse, setQuoteResponse] = useState(null);
 
   const wallet = useWallet();
-
-  // Need a custom RPC so you don't get rate-limited, don't rely on users' wallets
   const connection = new Connection(
-    'https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY_HERE'
+    `https://mainnet.helius-rpc.com/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`
   );
 
-  const handleFromAssetChange = async (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setFromAsset(
-      assets.find((asset) => asset.name === event.target.value) || assets[0]
-    );
+  const handleFromAssetChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setFromAsset(assets.find((asset) => asset.name === event.target.value) || assets[0]);
   };
 
   const handleToAssetChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setToAsset(
-      assets.find((asset) => asset.name === event.target.value) || assets[0]
-    );
+    setToAsset(assets.find((asset) => asset.name === event.target.value) || assets[0]);
   };
 
-  const handleFromValueChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      setFromAmount(Number(event.target.value));
-    };
-    
+  const handleFromValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setFromAmount(Number(event.target.value));
+  };
+
   const debounceQuoteCall = useCallback(debounce(getQuote, 500), []);
 
   useEffect(() => {
@@ -75,15 +67,15 @@ export default function Swap() {
       return;
     }
 
-    const quote = await (
-      await fetch(
-        `https://quote-api.jup.ag/v6/quote?inputMint=${fromAsset.mint}&outputMint=${toAsset.mint}&amount=${currentAmount * Math.pow(10, fromAsset.decimals)}&slippage=0.5`
-      )
-    ).json();
+    const response = await fetch(
+      `https://quote-api.jup.ag/v6/quote?inputMint=${fromAsset.mint}&outputMint=${toAsset.mint}&amount=${
+        currentAmount * Math.pow(10, fromAsset.decimals)
+      }&slippage=0.5`
+    );
+    const quote = await response.json();
 
     if (quote && quote.outAmount) {
-      const outAmountNumber =
-        Number(quote.outAmount) / Math.pow(10, toAsset.decimals);
+      const outAmountNumber = Number(quote.outAmount) / Math.pow(10, toAsset.decimals);
       setToAmount(outAmountNumber);
     }
 
@@ -92,28 +84,21 @@ export default function Swap() {
 
   async function signAndSendTransaction() {
     if (!wallet.connected || !wallet.signTransaction) {
-      console.error(
-        'Wallet is not connected or does not support signing transactions'
-      );
+      console.error('Wallet is not connected or does not support signing transactions');
       return;
     }
 
-    // get serialized transactions for the swap
-    const { swapTransaction } = await (
-      await fetch('https://quote-api.jup.ag/v6/swap', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          quoteResponse,
-          userPublicKey: wallet.publicKey?.toString(),
-          wrapAndUnwrapSol: true,
-          // feeAccount is optional. Use if you want to charge a fee.  feeBps must have been passed in /quote API.
-          // feeAccount: "fee_account_public_key"
-        }),
-      })
-    ).json();
+    const response = await fetch('https://quote-api.jup.ag/v6/swap', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quoteResponse,
+        userPublicKey: wallet.publicKey?.toString(),
+        wrapAndUnwrapSol: true,
+      }),
+    });
+
+    const { swapTransaction } = await response.json();
 
     try {
       const swapTransactionBuf = Buffer.from(swapTransaction, 'base64');
@@ -127,14 +112,16 @@ export default function Swap() {
       });
 
       const latestBlockHash = await connection.getLatestBlockhash();
-      await connection.confirmTransaction({
-        blockhash: latestBlockHash.blockhash,
-        lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-        signature: txid
-      }, 'confirmed');
-      
-      console.log(`https://solscan.io/tx/${txid}`);
+      await connection.confirmTransaction(
+        {
+          blockhash: latestBlockHash.blockhash,
+          lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+          signature: txid,
+        },
+        'confirmed'
+      );
 
+      console.log(`Transaction confirmed: https://solscan.io/tx/${txid}`);
     } catch (error) {
       console.error('Error signing or sending the transaction:', error);
     }
@@ -168,7 +155,6 @@ export default function Swap() {
           <input
             type="number"
             value={toAmount}
-            // onChange={(e) => setToAmount(Number(e.target.value))}
             className={styles.inputField}
             readOnly
           />
@@ -196,47 +182,22 @@ export default function Swap() {
   );
 }
 
-/* Sample quote response
-
+/* 
+Sample Quote Response:
+{
+  "inputMint": "So11111111111111111111111111111111111111112",
+  "inAmount": "100000000",
+  "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "outAmount": "9998099",
+  "routePlan": [
     {
-      "inputMint": "So11111111111111111111111111111111111111112",
-      "inAmount": "100000000",
-      "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-      "outAmount": "9998099",
-      "otherAmountThreshold": "9948109",
-      "swapMode": "ExactIn",
-      "slippageBps": 50,
-      "platformFee": null,
-      "priceImpactPct": "0.000146888216121999999999995",
-      "routePlan": [
-        {
-          "swapInfo": {
-            "ammKey": "HcoJqG325TTifs6jyWvRJ9ET4pDu12Xrt2EQKZGFmuKX",
-            "label": "Whirlpool",
-            "inputMint": "So11111111111111111111111111111111111111112",
-            "outputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-            "inAmount": "100000000",
-            "outAmount": "10003121",
-            "feeAmount": "4",
-            "feeMint": "So11111111111111111111111111111111111111112"
-          },
-          "percent": 100
-        },
-        {
-          "swapInfo": {
-            "ammKey": "ARwi1S4DaiTG5DX7S4M4ZsrXqpMD1MrTmbu9ue2tpmEq",
-            "label": "Meteora DLMM",
-            "inputMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-            "inAmount": "10003121",
-            "outAmount": "9998099",
-            "feeAmount": "1022",
-            "feeMint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
-          },
-          "percent": 100
-        }
-      ],
-      "contextSlot": 242289509,
-      "timeTaken": 0.002764025
+      "swapInfo": {
+        "ammKey": "HcoJqG325TTifs6jyWvRJ9ET4pDu12Xrt2EQKZGFmuKX",
+        "label": "Whirlpool",
+        "inAmount": "100000000",
+        "outAmount": "10003121"
+      }
     }
-    */
+  ]
+}
+*/
