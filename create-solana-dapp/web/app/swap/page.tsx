@@ -40,7 +40,7 @@ export default function Swap() {
 
   const wallet = useWallet();
   const connection = new Connection(
-    `https://mainnet.helius-rpc.com/?api-key=${process.env.REACT_APP_HELIUS_API_KEY}`
+    `https://mainnet.helius-rpc.com/?api-key=39499f93-70e8-42b0-a690-1655c13bc6e9`
   );
 
   const handleFromAssetChange = (event: React.ChangeEvent<HTMLSelectElement>) => {

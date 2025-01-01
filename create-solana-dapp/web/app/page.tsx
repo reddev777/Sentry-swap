@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import styles from './page.module.css';
+import * as dotenv from 'dotenv';
 
 function Page() {
   useEffect(() => {
@@ -13,14 +14,15 @@ function Page() {
   }, []);
 
   function launchJupiter() {
+    dotenv.config({path: __dirname + '/.env'});
     const apiKey = process.env.REACT_APP_HELIUS_API_KEY; // Get the API key from environment variable
-
+    console.log(apiKey)
     if (window.Jupiter) {
       window.Jupiter.init({ 
         displayMode: "integrated",
         integratedTargetId: "integrated-terminal",
-        endpoint: `https://mainnet.helius-rpc.com/?api-key=${apiKey}`,
-        strictTokenList: false,
+        endpoint: `https://mainnet.helius-rpc.com/?api-key=39499f93-70e8-42b0-a690-1655c13bc6e9`,
+        strictTokenList: false, 
         defaultExplorer: "SolanaFM",
         formProps: {
           initialAmount: "888888880000",
