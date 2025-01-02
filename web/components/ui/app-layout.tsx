@@ -14,7 +14,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         }}
       >
         <div>
-          <Link href="https://sentry-ai.netlify.app/">
+          <Link href="https://sentryai.app/">
             <img src="/solana-logo.png" height={50} alt="Solana Logo" />
           </Link>
         </div>
