@@ -1,6 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/swap/page": "app/swap/page.js",
-  "/api/hello/route": "app/api/hello/route.js",
-  "/api/swap/route": "app/api/swap/route.js"
-}

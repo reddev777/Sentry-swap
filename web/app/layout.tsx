@@ -7,7 +7,7 @@ import Head from 'next/head';
 export const metadata = {
   title: 'Sentry swap',
   description: 'Powered by $Sentry',
-  favicon: "create-solana-dapp/web/public/favicon.ico"
+  favicon: "web/public/favicon.ico"
 
 };
 export default function RootLayout({children,}: {children: React.ReactNode; }) {
@@ -30,4 +30,4 @@ export default function RootLayout({children,}: {children: React.ReactNode; }) {
       </body>
     </html>
   );
-}
+} 
