@@ -1,0 +1,6 @@
+{
+  "/page": "/",
+  "/swap/page": "/swap",
+  "/api/hello/route": "/api/hello",
+  "/api/swap/route": "/api/swap"
+}
